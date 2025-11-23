@@ -1,0 +1,583 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>東京・首爾 11日雙城誌</title>
+    <!-- 引入 Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@300;400;500;700&family=Shippori+Mincho:wght@400;700&display=swap" rel="stylesheet">
+    <!-- 引入 FontAwesome 圖標 -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <style>
+        :root {
+            --bg-color: #F9F7F2;
+            --primary-color: #2C3E50;
+            --accent-color: #C85554;
+            --card-bg: #FFFFFF;
+            --text-color: #4A4A4A;
+            --secondary-text: #888888;
+            --shadow: 0 4px 20px rgba(0,0,0,0.05);
+            --radius: 16px;
+            --sea-color: #0077be;
+            --land-color: #e91e63;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+        
+        body {
+            font-family: 'Shippori Mincho', 'Noto Sans TC', serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            padding-bottom: 90px;
+        }
+
+        /* iOS 按鈕強制優化 */
+        button {
+            border: none; background: none; padding: 0; margin: 0;
+            font-family: inherit; cursor: pointer; -webkit-appearance: none; appearance: none; outline: none;
+        }
+
+        /* --- Hero Section --- */
+        .hero {
+            padding: 40px 24px 20px;
+            background: linear-gradient(180deg, rgba(255,255,255,0) 0%, var(--bg-color) 100%), url('https://images.unsplash.com/photo-1540959733332-eab4deabeeaf?q=80&w=1000&auto=format&fit=crop');
+            background-size: cover; background-position: center; height: 280px;
+            display: flex; flex-direction: column; justify-content: flex-end; position: relative;
+        }
+        .hero-date {
+            font-size: 0.9rem; letter-spacing: 2px; color: var(--primary-color); font-weight: bold;
+            background: rgba(255,255,255,0.8); display: inline-block; padding: 4px 12px;
+            border-radius: 20px; margin-bottom: 8px; backdrop-filter: blur(4px);
+        }
+        .hero-title { font-size: 1.8rem; font-weight: 700; line-height: 1.3; color: var(--primary-color); margin-bottom: 10px; }
+        .weather-badge {
+            position: absolute; top: 20px; right: 20px; background: white; padding: 8px 12px;
+            border-radius: 12px; box-shadow: var(--shadow); font-size: 0.85rem; display: flex; align-items: center; gap: 6px;
+        }
+
+        /* --- Day Selector --- */
+        .day-nav {
+            display: flex; overflow-x: auto; padding: 10px 20px; gap: 12px;
+            scrollbar-width: none; position: sticky; top: 0; background: var(--bg-color); z-index: 10; border-bottom: 1px solid rgba(0,0,0,0.05);
+        }
+        .day-nav::-webkit-scrollbar { display: none; }
+        .day-chip {
+            flex: 0 0 auto; padding: 8px 16px; border-radius: 24px; border: 1px solid #ddd;
+            font-family: 'Noto Sans TC', sans-serif; font-size: 0.9rem; color: var(--secondary-text);
+            transition: all 0.2s ease; background-color: transparent;
+        }
+        .day-chip.active { background-color: var(--primary-color); color: white; border-color: var(--primary-color); box-shadow: 0 4px 10px rgba(44, 62, 80, 0.3); }
+
+        /* --- Timeline --- */
+        .timeline-container { padding: 20px 24px; position: relative; }
+        .timeline-item { display: flex; gap: 16px; margin-bottom: 24px; position: relative; }
+        .timeline-item::before { content: ''; position: absolute; left: 24px; top: 24px; bottom: -24px; width: 1px; background: #E0E0E0; z-index: 0; }
+        .timeline-item:last-child::before { display: none; }
+        .time-col { flex: 0 0 50px; text-align: right; font-size: 0.85rem; font-weight: 600; color: var(--secondary-text); padding-top: 4px; font-family: 'Noto Sans TC'; z-index: 1; background: var(--bg-color); }
+        .card-col { flex: 1; }
+        .event-card {
+            background: var(--card-bg); border-radius: var(--radius); padding: 16px;
+            box-shadow: var(--shadow); position: relative; overflow: hidden; border-left: 4px solid transparent;
+        }
+        .event-card.flight { border-left-color: #3498db; }
+        .event-card.hotel { border-left-color: #9b59b6; }
+        .event-card.food { border-left-color: #e67e22; }
+        .event-card.spot { border-left-color: var(--accent-color); }
+        .event-card.transport { border-left-color: #2ecc71; }
+        
+        .card-title { font-size: 1.1rem; font-weight: 700; color: var(--primary-color); margin-bottom: 4px; }
+        .card-desc { font-size: 0.9rem; color: var(--text-color); line-height: 1.6; margin-bottom: 8px; font-family: 'Noto Sans TC'; }
+        .traffic-tag { display: inline-block; background-color: #E8F5E9; color: #2E7D32; padding: 4px 8px; border-radius: 4px; font-size: 0.8rem; margin-top: 6px; font-weight: 500; }
+        .action-row { display: flex; gap: 12px; margin-top: 12px; border-top: 1px dashed #eee; padding-top: 8px; }
+        .icon-btn { text-decoration: none; background: none; border: none; color: var(--secondary-text); font-size: 1rem; cursor: pointer; display: flex; align-items: center; gap: 4px; font-family: 'Noto Sans TC'; }
+
+        /* --- DAS Styles --- */
+        .das-header { background: white; padding: 24px; border-radius: 0 0 20px 20px; box-shadow: var(--shadow); margin-bottom: 20px; position: sticky; top: 0; z-index: 20; }
+        .speech-bubble { background: #EBF8FF; border-left: 5px solid var(--sea-color); padding: 15px; border-radius: 8px; margin-bottom: 15px; }
+        .speech-text-jp { font-size: 1.1rem; font-weight: bold; color: #333; margin-bottom: 5px; font-family: 'Noto Sans JP', sans-serif; }
+        .speech-text-zh { font-size: 0.85rem; color: #666; }
+        .park-switcher { display: flex; background: #eee; border-radius: 30px; padding: 4px; }
+        .park-btn { flex: 1; text-align: center; padding: 10px; border-radius: 25px; font-size: 0.95rem; font-weight: bold; cursor: pointer; transition: 0.3s; color: #888; }
+        .park-btn.active-sea { background: white; color: var(--sea-color); box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
+        .park-btn.active-land { background: white; color: var(--land-color); box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
+        .das-list { padding: 0 20px; }
+        .das-card { background: white; border-radius: 12px; padding: 20px; margin-bottom: 16px; box-shadow: var(--shadow); border: 1px solid #f0f0f0; }
+        .das-jp-name { font-size: 1.3rem; font-weight: 900; color: #222; margin-bottom: 8px; line-height: 1.4; font-family: sans-serif; }
+        .das-sub-info { font-size: 0.85rem; color: #666; margin-bottom: 2px; font-family: 'Noto Sans TC'; }
+
+        /* --- Info Styles --- */
+        .info-section { padding: 24px; display: none; }
+        .info-group-title { font-family: 'Shippori Mincho'; font-size: 1.4rem; font-weight: bold; color: var(--primary-color); margin: 30px 0 15px 0; padding-left: 10px; border-left: 4px solid var(--accent-color); }
+        .info-card { background: white; border-radius: var(--radius); padding: 20px; margin-bottom: 16px; box-shadow: var(--shadow); border: 1px solid #f5f5f5; }
+        .info-header { border-bottom: 1px solid #eee; padding-bottom: 12px; margin-bottom: 12px; font-weight: bold; color: var(--primary-color); font-size: 1.1rem; display: flex; justify-content: space-between; align-items: center; }
+        .info-row { display: flex; justify-content: space-between; margin-bottom: 8px; font-size: 0.95rem; }
+        .info-label { color: #888; }
+        .info-val { font-weight: 500; text-align: right; color: #333; max-width: 65%; }
+        .copy-btn { background: #f0f0f0; color: #555; border: none; padding: 4px 10px; border-radius: 12px; font-size: 0.8rem; cursor: pointer; }
+        .copy-btn.set { background-color: var(--accent-color); color: white; }
+
+        /* --- Bottom Nav --- */
+        .bottom-nav { position: fixed; bottom: 0; left: 0; width: 100%; background: white; height: 80px; display: flex; justify-content: space-around; align-items: flex-start; padding-top: 12px; box-shadow: 0 -4px 20px rgba(0,0,0,0.05); z-index: 100; }
+        .nav-item { display: flex; flex-direction: column; align-items: center; color: #ccc; font-size: 0.75rem; cursor: pointer; transition: color 0.3s; width: 33.33%; background-color: transparent; }
+        .nav-item i { font-size: 1.4rem; margin-bottom: 5px; }
+        .nav-item.active { color: var(--primary-color); }
+        .nav-item.das-active { color: var(--sea-color); }
+
+        /* --- Modal & Input --- */
+        .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); display: none; justify-content: center; align-items: center; z-index: 1000; backdrop-filter: blur(3px); }
+        .modal-content { background: white; width: 85%; max-width: 400px; padding: 24px; border-radius: 20px; position: relative; max-height: 80vh; overflow-y: auto; }
+        .close-modal { position: absolute; top: 15px; right: 15px; font-size: 1.5rem; cursor: pointer; color: #999; }
+        
+        .modal-label { display: block; margin-top: 15px; font-weight: bold; color: #555; font-size: 0.9rem; }
+        .modal-input { width: 100%; padding: 12px; margin-top: 5px; border: 2px solid #ddd; border-radius: 8px; font-size: 1rem; }
+        .modal-file-label { display: block; margin-top: 15px; padding: 15px; border: 2px dashed #ccc; border-radius: 8px; text-align: center; color: #888; cursor: pointer; }
+        .modal-file-label:hover { background: #f9f9f9; }
+        .preview-img { width: 100%; margin-top: 10px; border-radius: 8px; display: none; border: 1px solid #ddd; }
+        
+        .modal-save-btn { width: 100%; padding: 12px; background: var(--primary-color); color: white; border-radius: 8px; font-size: 1rem; font-weight: bold; margin-top: 20px; }
+        .modal-clear-btn { background: transparent; color: #999; font-size: 0.8rem; margin-top: 15px; text-decoration: underline; text-align: center; width: 100%; display: block; }
+        
+        .hidden { display: none !important; }
+
+    </style>
+</head>
+<body>
+
+    <!-- VIEW 1: ITINERARY -->
+    <div id="view-itinerary">
+        <div class="hero">
+            <div class="weather-badge"><i class="fa-solid fa-cloud-sun"></i> <span>14°C</span></div>
+            <div class="hero-date" id="hero-date">DAY 1 • 11/26</div>
+            <div class="hero-title" id="hero-location"></div>
+        </div>
+        <div class="day-nav" id="day-nav-container"></div>
+        <div class="timeline-container" id="timeline-content"></div>
+    </div>
+
+    <!-- VIEW 2: DAS CARD -->
+    <div id="view-das" class="hidden">
+        <div class="das-header">
+            <h2 style="margin-bottom:15px; text-align:center; font-family:'Shippori Mincho'">DAS 溝通卡</h2>
+            <div class="speech-bubble">
+                <div class="speech-text-jp">すみません、DASを利用したいです。<br>このアトラクションをお願いします。</div>
+                <div class="speech-text-zh">不好意思，我想使用 DAS，麻煩幫我預約這個設施。</div>
+            </div>
+            <div class="park-switcher">
+                <button type="button" class="park-btn active-sea" id="btn-sea" onclick="switchPark('sea')">🌊 迪士尼海洋</button>
+                <button type="button" class="park-btn" id="btn-land" onclick="switchPark('land')">🏰 迪士尼樂園</button>
+            </div>
+        </div>
+        <div class="das-list" id="das-list-container"></div>
+        <div style="height:100px;"></div>
+    </div>
+
+    <!-- VIEW 3: INFO -->
+    <div id="view-info" class="hidden info-section">
+        <h2 style="margin-bottom: 10px; font-family:'Shippori Mincho'; text-align:center;">旅程資訊總覽</h2>
+        <div class="info-group-title">✈️ 航班資訊</div>
+        <div id="flight-info-container"></div>
+        <div class="info-group-title">🏨 住宿資訊</div>
+        <div id="hotel-info-container"></div>
+        <div style="height:100px;"></div>
+    </div>
+
+    <!-- Bottom Navigation -->
+    <div class="bottom-nav">
+        <button type="button" class="nav-item active" onclick="switchView('itinerary', this)">
+            <i class="fa-regular fa-calendar-days"></i> <span>行程</span>
+        </button>
+        <button type="button" class="nav-item" onclick="switchView('das', this)">
+            <i class="fa-solid fa-person-walking-with-cane"></i> <span>DAS通關</span>
+        </button>
+        <button type="button" class="nav-item" onclick="switchView('info', this)">
+            <i class="fa-solid fa-passport"></i> <span>資訊</span>
+        </button>
+        <button type="button" class="nav-item" onclick="openFullMap()">
+            <i class="fa-solid fa-map-location-dot"></i> <span>總地圖</span>
+        </button>
+    </div>
+
+    <!-- Secure Modal -->
+    <div class="modal-overlay" id="secure-modal">
+        <div class="modal-content">
+            <span class="close-modal" onclick="closeModal()">&times;</span>
+            <h3 id="modal-title" style="margin-bottom: 10px; color:var(--primary-color);">資料設定</h3>
+            <p style="font-size:0.8rem; color:#888; margin-bottom:15px;">資料僅儲存於您的手機中。</p>
+            
+            <label class="modal-label">文字代號 / 備註</label>
+            <input type="text" id="input-text" class="modal-input" placeholder="輸入訂位代號或備註...">
+            
+            <label class="modal-label">圖片 / QR Code</label>
+            <label for="input-file" class="modal-file-label">
+                <i class="fa-solid fa-image"></i> 點擊選擇圖片 (建議截圖)
+            </label>
+            <input type="file" id="input-file" accept="image/*" style="display:none" onchange="previewImage(this)">
+            
+            <img id="img-preview" class="preview-img">
+            
+            <button class="modal-save-btn" onclick="saveData()">儲存</button>
+            <button class="modal-clear-btn" onclick="clearData()">清除此筆資料</button>
+        </div>
+    </div>
+
+    <script>
+        // --- DATA STRUCTURE (Keys added for storage) ---
+        const tripData = {
+            days: [
+                { day: 1, date: "11/26 (三)", loc: "東京・淺草", weather: "12°C", events: [
+                    { time: "12:10", title: "桃園 T1 起飛", desc: "泰國獅航 SL394", type: "flight", key: "flight_1" },
+                    { time: "16:15", title: "抵達東京成田 T1", desc: "入境、領行李 (北翼抵達)", type: "flight" },
+                    { time: "17:04", title: "搭乘 Access 特急", desc: "往羽田方向，直達押上站 (約58分)", type: "transport" },
+                    { time: "18:10", title: "和緣 WAEN Check-in", desc: "1-Bedroom Apt (近押上站)", type: "hotel", key: "hotel_1" },
+                    { time: "19:00", title: "淺草文化觀光中心 8F", desc: "免費展望台", type: "spot" },
+                    { time: "19:45", title: "淺草寺", desc: "雷門、五重塔點燈", type: "spot" },
+                    { time: "20:30", title: "晴空塔城 Solamachi", desc: "晚餐、寶可夢中心", type: "food" }
+                ]},
+                { day: 2, date: "11/27 (四)", loc: "東京・迪士尼海洋", weather: "11°C", events: [
+                    { time: "07:35", title: "搭乘 Shuttle Bus", desc: "晴空塔巴士站直達迪士尼", type: "transport" },
+                    { time: "08:30", title: "入園", desc: "App 確認 DPA、開通 DAS", type: "spot" },
+                    { time: "19:15", title: "Believe! Sea of Dreams", desc: "夜間港灣秀", type: "spot" },
+                    { time: "20:30", title: "Starbright Christmas", desc: "聖誕煙火", type: "spot" }
+                ]},
+                { day: 3, date: "11/28 (五)", loc: "高尾山・日比谷", weather: "10°C", events: [
+                    { time: "08:00", title: "前往高尾山", desc: "賞楓名所", type: "spot", traffic: "京王線一日票 + 地鐵72hr" },
+                    { time: "16:30", title: "東京中城日比谷", desc: "聖誕點燈", type: "spot" }
+                ]},
+                { day: 4, date: "11/29 (六)", loc: "東京・賞楓", weather: "11°C", events: [
+                    { time: "08:00", title: "明治神宮外苑", desc: "銀杏大道", type: "spot", traffic: "地鐵 72hr 券" },
+                    { time: "18:30", title: "六義園", desc: "夜楓點燈", type: "spot" }
+                ]},
+                { day: 5, date: "11/30 (日)", loc: "上野・哈利波特", weather: "12°C", events: [
+                    { time: "08:00", title: "上野恩賜公園", desc: "公園散步", type: "spot" },
+                    { time: "12:00", title: "哈利波特影城", desc: "需預約入場", type: "spot", key: "ticket_hp" } // Added Key
+                ]},
+                { day: 6, date: "12/01 (一)", loc: "東京・迪士尼樂園", weather: "10°C", events: [
+                    { time: "07:35", title: "搭乘 Shuttle Bus", desc: "直達迪士尼", type: "transport" },
+                    { time: "19:15", title: "Electrical Parade", desc: "電子大遊行", type: "spot" }
+                ]},
+                { day: 7, date: "12/02 (二)", loc: "移動日・仁川", weather: "6°C", events: [
+                    { time: "11:00", title: "和緣 WAEN 退房", desc: "前往成田機場", type: "hotel" },
+                    { time: "12:50", title: "飛往首爾", desc: "首爾航空 RS702", type: "flight", key: "flight_2" },
+                    { time: "16:00", title: "INSPIRE Resort Check-in", desc: "迎仕柏度假城", type: "hotel", key: "hotel_2" }
+                ]},
+                { day: 8, date: "12/03 (三)", loc: "移動至弘大", weather: "5°C", events: [
+                    { time: "Night", title: "Central Hongdae Check-in", desc: "Red Road Stay", type: "hotel", key: "hotel_3" }
+                ]},
+                { day: 9, date: "12/04 (四)", loc: "首爾・文創美妝", weather: "4°C", events: [
+                    { time: "20:00", title: "TOUCH FIVE 猛男秀", desc: "提早30分換票", type: "spot", key: "show_1" }
+                ]},
+                { day: 10, date: "12/05 (五)", loc: "首爾・醫美", weather: "3°C", events: [
+                    { time: "15:00", title: "Olive Young", desc: "大採購", type: "food" }
+                ]},
+                { day: 11, date: "12/06 (六)", loc: "返程", weather: "15°C", events: [
+                    { time: "13:50", title: "飛往台北", desc: "長榮 BR155", type: "flight", key: "flight_3" }
+                ]}
+            ],
+            logistics: {
+                flights: [
+                    { title: "去程：台北 → 東京", code: "SL394", date: "11/26", time: "12:10 ➝ 16:15", key: "flight_1" },
+                    { title: "中程：東京 → 首爾", code: "RS702", date: "12/02", time: "12:50 ➝ 15:35", key: "flight_2" },
+                    { title: "回程：首爾 → 台北", code: "BR155", date: "12/06", time: "13:50 ➝ 15:35", key: "flight_3" }
+                ],
+                hotels: [
+                    { name: "和緣 WAEN (東京)", period: "6晚", room: "1-BR Apt", key: "hotel_1" },
+                    { name: "INSPIRE Resort (仁川)", period: "1晚", room: "Double Queen", key: "hotel_2" },
+                    { name: "Central Hongdae (首爾)", period: "3晚", room: "2-BR Apt", key: "hotel_3" }
+                ]
+            }
+        };
+
+        const dasData = {
+            sea: [
+                { jp: "アナとエルサのフローズンジャーニー", en: "Anna and Elsa's Frozen Journey", zh: "冰雪奇緣：安娜與艾莎的冰雪之旅" },
+                { jp: "ラプンツェルのランタンフェスティバル", en: "Rapunzel's Lantern Festival", zh: "樂佩公主天燈盛會" },
+                { jp: "ピーターパンのネバーランドアドベンチャー", en: "Peter Pan's Never Land Adventure", zh: "彼得潘的夢幻島歷險記" },
+                { jp: "ソアリン：ファンタスティック・フライト", en: "Soaring: Fantastic Flight", zh: "翱翔：夢幻奇航" },
+                { jp: "トイ・ストーリー・マニア！", en: "Toy Story Mania!", zh: "玩具總動員瘋狂遊戲屋" },
+                { jp: "センター・オブ・ジ・アース", en: "Journey to the Center of the Earth", zh: "地心探險之旅" }
+            ],
+            land: [
+                { jp: "美女と野獣“魔法のものがたり”", en: "Enchanted Tale of Beauty and the Beast", zh: "美女與野獸「城堡奇緣」" },
+                { jp: "プーさんのハニーハント", en: "Pooh's Hunny Hunt", zh: "小熊維尼獵蜜記" },
+                { jp: "ベイマックスのハッピーライド", en: "The Happy Ride with Baymax", zh: "大英雄天團歡樂之旅" },
+                { jp: "モンスターズ・インク“ライド＆ゴーシーク！”", en: "Monsters, Inc. Ride & Go Seek!", zh: "怪獸電力公司「迷藏巡遊車」" },
+                { jp: "スプラッシュ・マウンテン", en: "Splash Mountain", zh: "飛濺山" },
+                { jp: "ビッグサンダー・マウンテン", en: "Big Thunder Mountain", zh: "巨雷山" }
+            ]
+        };
+
+        // --- CORE FUNCTIONS ---
+        let currentDayIndex = 0;
+        let activeKey = null;
+
+        function init() {
+            renderDayNav();
+            renderDay(0);
+            renderDAS('sea');
+            renderInfoPage();
+        }
+
+        // --- View Switching ---
+        function switchView(viewName, el) {
+            document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active', 'das-active'));
+            if (viewName === 'das') el.classList.add('das-active');
+            else el.classList.add('active');
+
+            ['view-itinerary', 'view-das', 'view-info'].forEach(v => {
+                const elem = document.getElementById(v);
+                if(elem) { elem.classList.add('hidden'); elem.style.display = 'none'; }
+            });
+            
+            const target = document.getElementById('view-' + viewName);
+            if (target) { 
+                target.classList.remove('hidden'); 
+                target.style.display = 'block'; 
+            }
+            if(viewName === 'info') renderInfoPage();
+            window.scrollTo(0, 0);
+        }
+
+        // --- DAS Park Switching ---
+        function switchPark(park) {
+            renderDAS(park);
+            const btnSea = document.getElementById('btn-sea');
+            const btnLand = document.getElementById('btn-land');
+            if (park === 'sea') {
+                btnSea.className = 'park-btn active-sea'; btnLand.className = 'park-btn';
+                document.querySelector('.speech-bubble').style.borderLeftColor = 'var(--sea-color)';
+            } else {
+                btnSea.className = 'park-btn'; btnLand.className = 'park-btn active-land';
+                document.querySelector('.speech-bubble').style.borderLeftColor = 'var(--land-color)';
+            }
+        }
+
+        function renderDAS(park) {
+            const container = document.getElementById('das-list-container');
+            let html = '';
+            dasData[park].forEach(item => {
+                html += `<div class="das-card"><div class="das-jp-name">${item.jp}</div><div class="das-sub-info">${item.en}</div><div class="das-sub-info">${item.zh}</div></div>`;
+            });
+            container.innerHTML = html;
+        }
+
+        // --- Itinerary Rendering ---
+        function renderDayNav() {
+            const navContainer = document.getElementById('day-nav-container');
+            let html = '';
+            tripData.days.forEach((day, index) => {
+                html += `<button type="button" class="day-chip ${index === 0 ? 'active' : ''}" onclick="selectDay(${index}, this)">Day ${day.day}</button>`;
+            });
+            navContainer.innerHTML = html;
+        }
+
+        function selectDay(index, el) {
+            currentDayIndex = index;
+            document.querySelectorAll('.day-chip').forEach(chip => chip.classList.remove('active'));
+            el.classList.add('active');
+            renderDay(index);
+        }
+
+        function renderDay(index) {
+            const dayData = tripData.days[index];
+            document.getElementById('hero-date').innerText = `Day ${dayData.day} • ${dayData.date}`;
+            document.getElementById('hero-location').innerHTML = dayData.loc.replace('・', '<br>');
+            
+            const content = document.getElementById('timeline-content');
+            let html = '';
+
+            dayData.events.forEach(event => {
+                let iconClass = 'fa-location-dot';
+                if (event.type === 'flight') iconClass = 'fa-plane';
+                if (event.type === 'hotel') iconClass = 'fa-bed';
+                if (event.type === 'food') iconClass = 'fa-utensils';
+                if (event.type === 'transport') iconClass = 'fa-train-subway';
+
+                const mapQuery = encodeURIComponent(event.title + " " + dayData.loc.split('・')[0]);
+                const mapUrl = `https://www.google.com/maps/search/?api=1&query=${mapQuery}`;
+
+                // --- Secure Button Logic ---
+                let metaBtn = '';
+                if (event.key) {
+                    const hasData = localStorage.getItem(event.key + '_text') || localStorage.getItem(event.key + '_img');
+                    const btnText = hasData ? '查看憑證' : '輸入憑證';
+                    const btnIcon = hasData ? 'fa-check-circle' : 'fa-pen-to-square';
+                    const btnStyle = hasData ? 'color:var(--accent-color)' : '';
+                    metaBtn = `<button class="icon-btn" type="button" style="${btnStyle}" onclick="openModal('${event.key}', '${event.title}')"><i class="fa-solid ${btnIcon}"></i> <span>${btnText}</span></button>`;
+                }
+
+                const trafficTag = event.traffic ? `<div class="traffic-tag"><i class="fa-solid fa-ticket"></i> ${event.traffic}</div>` : '';
+
+                html += `
+                <div class="timeline-item">
+                    <div class="time-col">${event.time}</div>
+                    <div class="card-col">
+                        <div class="event-card ${event.type}">
+                            <div class="card-header"><div class="card-title">${event.title}</div><i class="fa-solid ${iconClass}" style="color:#ddd;"></i></div>
+                            <div class="card-desc">${event.desc}</div>
+                            ${trafficTag}
+                            <div class="action-row">
+                                <a href="${mapUrl}" target="_blank" class="icon-btn"><i class="fa-solid fa-map-location"></i> <span>地圖</span></a>
+                                ${metaBtn}
+                            </div>
+                        </div>
+                    </div>
+                </div>`;
+            });
+            html += '<div style="height: 40px;"></div>';
+            content.innerHTML = html;
+        }
+
+        // --- Info Page Rendering ---
+        function renderInfoPage() {
+            // Flights
+            const fContainer = document.getElementById('flight-info-container');
+            let fHtml = '';
+            tripData.logistics.flights.forEach(f => {
+                const hasData = localStorage.getItem(f.key + '_text') || localStorage.getItem(f.key + '_img');
+                const btnClass = hasData ? "copy-btn set" : "copy-btn";
+                const displayVal = hasData ? "已儲存" : "未設定";
+
+                fHtml += `
+                <div class="info-card">
+                    <div class="info-header"><span>${f.title}</span><i class="fa-solid fa-plane"></i></div>
+                    <div class="info-row"><span class="info-label">航班</span> <span class="info-val">${f.code}</span></div>
+                    <div class="info-row"><span class="info-label">時間</span> <span class="info-val" style="font-size:0.85rem">${f.time}</span></div>
+                    <div class="info-row">
+                        <span class="info-label">憑證狀態</span> 
+                        <div style="display:flex; align-items:center; gap:8px;">
+                            <span class="info-val" style="font-size:0.8rem">${displayVal}</span>
+                            <button class="${btnClass}" type="button" onclick="openModal('${f.key}', '航班憑證')"><i class="fa-solid fa-pen"></i></button>
+                        </div>
+                    </div>
+                </div>`;
+            });
+            fContainer.innerHTML = fHtml;
+
+            // Hotels
+            const hContainer = document.getElementById('hotel-info-container');
+            let hHtml = '';
+            tripData.logistics.hotels.forEach(h => {
+                const hasData = localStorage.getItem(h.key + '_text') || localStorage.getItem(h.key + '_img');
+                const btnClass = hasData ? "copy-btn set" : "copy-btn";
+                const displayVal = hasData ? "已儲存" : "未設定";
+
+                hHtml += `
+                <div class="info-card">
+                    <div class="info-header"><span>${h.name}</span><i class="fa-solid fa-hotel"></i></div>
+                    <div class="info-row"><span class="info-label">時間</span> <span class="info-val">${h.period}</span></div>
+                    <div class="info-row"><span class="info-label">房型</span> <span class="info-val" style="font-size:0.85rem">${h.room}</span></div>
+                    <div class="info-row">
+                        <span class="info-label">憑證狀態</span> 
+                        <div style="display:flex; align-items:center; gap:8px;">
+                            <span class="info-val" style="font-size:0.8rem">${displayVal}</span>
+                            <button class="${btnClass}" type="button" onclick="openModal('${h.key}', '住宿憑證')"><i class="fa-solid fa-pen"></i></button>
+                        </div>
+                    </div>
+                </div>`;
+            });
+            hContainer.innerHTML = hHtml;
+        }
+
+        // --- LOCAL STORAGE & MODAL LOGIC (Images + Text) ---
+        function openModal(key, title) {
+            activeKey = key;
+            document.getElementById('modal-title').innerText = title;
+            document.getElementById('secure-modal').style.display = 'flex';
+            
+            // Load existing data
+            const savedText = localStorage.getItem(key + '_text') || '';
+            const savedImg = localStorage.getItem(key + '_img') || '';
+            
+            document.getElementById('input-text').value = savedText;
+            const imgPreview = document.getElementById('img-preview');
+            
+            if (savedImg) {
+                imgPreview.src = savedImg;
+                imgPreview.style.display = 'block';
+            } else {
+                imgPreview.style.display = 'none';
+                imgPreview.src = '';
+            }
+            // Reset file input
+            document.getElementById('input-file').value = '';
+        }
+
+        function previewImage(input) {
+            if (input.files && input.files[0]) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    const img = document.getElementById('img-preview');
+                    img.src = e.target.result;
+                    img.style.display = 'block';
+                }
+                reader.readAsDataURL(input.files[0]);
+            }
+        }
+
+        function saveData() {
+            if (!activeKey) return;
+            
+            const textVal = document.getElementById('input-text').value;
+            const imgVal = document.getElementById('img-preview').src;
+            
+            // Save Text
+            if (textVal) localStorage.setItem(activeKey + '_text', textVal);
+            else localStorage.removeItem(activeKey + '_text');
+            
+            // Save Image (only if visible and valid base64)
+            if (document.getElementById('img-preview').style.display === 'block' && imgVal.startsWith('data:image')) {
+                try {
+                    localStorage.setItem(activeKey + '_img', imgVal);
+                } catch (e) {
+                    alert('圖片檔案太大，無法儲存！請嘗試截圖或壓縮後再上傳。');
+                    return;
+                }
+            } else {
+                localStorage.removeItem(activeKey + '_img');
+            }
+
+            closeModal();
+            
+            // Refresh UI
+            if(document.getElementById('view-itinerary').style.display !== 'none') {
+                renderDay(currentDayIndex);
+            } else {
+                renderInfoPage();
+            }
+        }
+
+        function clearData() {
+            if (!activeKey) return;
+            if(confirm('確定要清除此筆資料嗎？')) {
+                localStorage.removeItem(activeKey + '_text');
+                localStorage.removeItem(activeKey + '_img');
+                
+                document.getElementById('input-text').value = '';
+                document.getElementById('img-preview').src = '';
+                document.getElementById('img-preview').style.display = 'none';
+                
+                closeModal();
+                // Refresh UI
+                if(document.getElementById('view-itinerary').style.display !== 'none') {
+                    renderDay(currentDayIndex);
+                } else {
+                    renderInfoPage();
+                }
+            }
+        }
+
+        function closeModal() {
+            document.getElementById('secure-modal').style.display = 'none';
+        }
+
+        function openFullMap() {
+            window.open('https://www.google.com/maps/search/?api=1&query=Tokyo+Seoul+Trip', '_blank');
+        }
+
+        // Start
+        init();
+
+    </script>
+</body>
+</html>
